@@ -7,4 +7,4 @@ include:
       - '/includes/include.drupalci.workflows.yml'
 
 variables:
-  _CSPELL_WORDS: 'piotr, ramotowski'
+  _CSPELL_WORDS: 'piotr, ramotowski, anypassword, blockeduser, formtestuser, invaliduser, logoutuser, multiuser, nonexistentuser, onetimeuser, testuser, testuseronetime, validuser'
