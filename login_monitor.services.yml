@@ -1,0 +1,68 @@
+services:
+  login_monitor.login_monitor_service:
+    class: Drupal\login_monitor\Service\LoginMonitorService
+    arguments:
+      - '@entity_type.manager'
+      - '@login_monitor.config'
+      - '@login_monitor.login_event_data'
+      - '@login_monitor.login_log_service'
+      - '@login_monitor.notification_service'
+
+  login_monitor.notification_service:
+    class: Drupal\login_monitor\Service\LoginNotificationService
+    arguments:
+      - '@config.factory'
+      - '@plugin.manager.mail'
+      - '@logger.channel.mail'
+      - '@token'
+      - '@date.formatter'
+      - '@datetime.time'
+      - '@current_user'
+
+  login_monitor.login_log_service:
+    class: Drupal\login_monitor\Service\LoginLogService
+    arguments:
+      - '@entity_type.manager'
+      - '@datetime.time'
+      - '@config.factory'
+      - '@login_monitor.login_event_data'
+
+  login_monitor.stats_service:
+    class: Drupal\login_monitor\Service\LoginStatsService
+    arguments:
+      - '@entity_type.manager'
+      - '@datetime.time'
+      - '@database'
+
+  login_monitor.report_service:
+    class: Drupal\login_monitor\Service\LoginReportService
+    arguments:
+      - '@config.factory'
+      - '@plugin.manager.mail'
+      - '@datetime.time'
+      - '@token'
+      - '@language_manager'
+      - '@logger.channel.login_monitor'
+      - '@login_monitor.stats_service'
+
+  login_monitor.login_event_data:
+    class: Drupal\login_monitor\Service\LoginEventData
+    arguments:
+      - '@request_stack'
+      - '@datetime.time'
+      - '@database'
+
+  login_monitor.config:
+    class: \Drupal\Core\Config\ConfigFactoryInterface
+    factory: ['@config.factory', 'get']
+    arguments: ['login_monitor.settings']
+
+  logger.channel.mail:
+    class: Drupal\Core\Logger\LoggerChannel
+    factory: ['@logger.factory', 'get']
+    arguments: ['mail']
+
+  logger.channel.login_monitor:
+    class: Drupal\Core\Logger\LoggerChannel
+    factory: ['@logger.factory', 'get']
+    arguments: ['login_monitor']

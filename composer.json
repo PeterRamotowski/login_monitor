@@ -1,0 +1,23 @@
+{
+  "name": "drupal/login_monitor",
+  "type": "drupal-module",
+  "description": "Comprehensive login activity tracking with notifications, logging and statistical reports.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://drupal.org/project/login_monitor",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://drupal.org/project/issues/login_monitor",
+    "source": "https://git.drupalcode.org/project/login_monitor"
+  },
+  "authors": [
+    {
+      "name": "ramotowski",
+      "homepage": "https://www.drupal.org/user/64249"
+    }
+  ],
+  "require": {
+    "drupal/token": "*",
+    "drupal/core": "^11"
+  }
+}

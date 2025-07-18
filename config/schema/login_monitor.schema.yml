@@ -1,0 +1,47 @@
+# Schema for the configuration files of the Login monitor module.
+login_monitor.settings:
+  type: config_object
+  label: 'Login monitor settings'
+  mapping:
+    enable_login_logging:
+      type: boolean
+      label: 'Enable login logging'
+    send_email_notifications:
+      type: boolean
+      label: 'Send admin email notifications'
+    tracked_roles:
+      type: sequence
+      label: 'User roles to monitor'
+      sequence:
+        type: string
+        label: 'Role ID'
+    email_recipient:
+      type: email
+      label: 'Email recipient'
+    email_content:
+      type: string
+      label: 'Email content'
+    enable_log_cleanup:
+      type: boolean
+      label: 'Enable automatic log cleanup'
+    log_retention_days:
+      type: integer
+      label: 'Log retention period in days'
+    enable_email_reports:
+      type: boolean
+      label: 'Enable email reports'
+    report_frequency:
+      type: string
+      label: 'Report frequency'
+    report_recipient:
+      type: email
+      label: 'Report recipient email'
+    last_daily_report:
+      type: integer
+      label: 'Last daily report timestamp'
+    last_weekly_report:
+      type: integer
+      label: 'Last weekly report timestamp'
+    last_monthly_report:
+      type: integer
+      label: 'Last monthly report timestamp'

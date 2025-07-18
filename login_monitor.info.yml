@@ -1,0 +1,10 @@
+name: 'Login Monitor'
+type: module
+description: 'Comprehensive login activity tracking with notifications, logging and statistical reports.'
+package: 'Other'
+configure: login_monitor.settings
+core_version_requirement: ^11
+dependencies:
+  - drupal:user
+  - drupal:views
+  - token:token

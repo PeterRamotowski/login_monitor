@@ -1,0 +1,12 @@
+login_monitor.settings:
+  title: 'Login monitor'
+  description: 'Configure login monitoring, event logging, and security settings'
+  parent: user.admin_index
+  route_name: login_monitor.settings
+  weight: 10
+
+entity.login_log.collection:
+  title: 'Logins log'
+  description: 'List of logins.'
+  route_name: entity.login_log.collection
+  parent: system.admin_reports

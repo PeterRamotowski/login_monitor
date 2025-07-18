@@ -1,0 +1,6 @@
+services:
+  login_monitor.send-reports:
+    class: Drupal\login_monitor\Command\SendReportsCommand
+    arguments: ['@login_monitor.report_service']
+    tags:
+      - { name: console.command }

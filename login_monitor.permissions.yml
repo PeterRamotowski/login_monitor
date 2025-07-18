@@ -1,0 +1,12 @@
+administer login monitor settings:
+  title: 'Administer Login Monitor settings'
+  description: 'Manage settings for the Login Monitor module.'
+
+administer login log entities:
+  title: 'Administer login log entities'
+  description: 'Allows full access and deleting of login log entities'
+  restrict access: true
+
+view login log entities:
+  title: 'View login log entities'
+  description: 'Allows viewing of login log entities'

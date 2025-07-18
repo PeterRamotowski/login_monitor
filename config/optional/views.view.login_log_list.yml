@@ -1,0 +1,493 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - login_monitor
+    - options
+    - user
+id: login_log_list
+label: 'Login Log List'
+module: views
+description: 'List view for login log records'
+tag: ''
+base_table: login_log
+base_field: id
+display:
+  default:
+    display_plugin: default
+    id: default
+    display_title: Default
+    position: 0
+    display_options:
+      title: 'Logins log'
+      access:
+        type: perm
+        options:
+          perm: 'view login log entities'
+      cache:
+        type: tag
+        options: {  }
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          override: true
+          sticky: false
+          caption: ''
+          summary: ''
+          description: ''
+          columns:
+            created: created
+            event_type: event_type
+            user_id: user_id
+            typed_username: typed_username
+            uid: user_id
+            concurrent_sessions: concurrent_sessions
+            roles_target_id: roles_target_id
+            ip_address: ip_address
+            user_agent: user_agent
+            delete_login_log: delete_login_log
+            operations: operations
+          info:
+            created:
+              sortable: true
+              default_sort_order: desc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            event_type:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            user_id:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            typed_username:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            uid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            concurrent_sessions:
+              sortable: true
+              default_sort_order: desc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            roles_target_id:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: true
+              responsive: ''
+            ip_address:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            user_agent:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            delete_login_log:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            operations:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+          default: created
+          empty_table: false
+      row:
+        type: fields
+        options:
+          inline: {  }
+          separator: ''
+          hide_empty: false
+          default_field_elements: true
+      relationships:
+        uid:
+          id: uid
+          table: login_log
+          field: uid
+          relationship: none
+          group_type: group
+          admin_label: User
+          entity_type: login_log
+          entity_field: uid
+          plugin_id: standard
+          required: true
+      fields:
+        created:
+          id: created
+          table: login_log
+          field: created
+          group_type: group
+          admin_label: ''
+          label: Login Date
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp
+          settings:
+            date_format: medium
+            custom_date_format: ''
+            timezone: ''
+          group_column: value
+          entity_type: login_log
+          entity_field: created
+          plugin_id: field
+        event_type:
+          id: event_type
+          table: login_log
+          field: event_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          entity_field: event_type
+          plugin_id: field
+          label: 'Event type'
+          exclude: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: list_default
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        user_id:
+          id: user_id
+          table: login_log
+          field: user_id
+          group_type: group
+          admin_label: ''
+          label: Username
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          entity_type: login_log
+          entity_field: user_id
+          plugin_id: field
+        typed_username:
+          id: typed_username
+          table: login_log
+          field: typed_username
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          entity_field: typed_username
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        uid:
+          id: uid
+          table: login_log
+          field: uid
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          entity_field: uid
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: ' '
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: true
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: false
+            ellipsis: false
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          empty: '{{ typed_username }}'
+          hide_empty: false
+          empty_zero: true
+          hide_alter_empty: false
+          click_sort_column: target_id
+          type: entity_reference_entity_id
+          settings: {  }
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        concurrent_sessions:
+          id: concurrent_sessions
+          table: login_log
+          field: concurrent_sessions
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Concurrent Sessions'
+          exclude: false
+          empty: '0'
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: login_log
+          entity_field: concurrent_sessions
+          plugin_id: field
+        roles_target_id:
+          id: roles_target_id
+          table: user__roles
+          field: roles_target_id
+          relationship: uid
+          group_type: group
+          admin_label: ''
+          entity_type: user
+          entity_field: roles
+          plugin_id: user_roles
+          label: 'User roles'
+          exclude: false
+          empty: ''
+          hide_empty: true
+          empty_zero: false
+          hide_alter_empty: true
+          type: separator
+          separator: ', '
+        ip_address:
+          id: ip_address
+          table: login_log
+          field: ip_address
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          entity_field: ip_address
+          plugin_id: field
+          label: 'IP Address'
+          exclude: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings: {  }
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        user_agent:
+          id: user_agent
+          table: login_log
+          field: user_agent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          entity_field: user_agent
+          plugin_id: field
+          label: 'User Agent'
+          exclude: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        delete_login_log:
+          id: delete_login_log
+          table: login_log
+          field: delete_login_log
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          plugin_id: entity_link_delete
+          label: ''
+          exclude: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          text: Delete
+          output_url_as_text: false
+          absolute: false
+        operations:
+          id: operations
+          table: login_log
+          field: operations
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: login_log
+          plugin_id: entity_operations
+          label: Operations
+          exclude: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          destination: true
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text_custom
+          empty: true
+          content: 'The logins log is empty.'
+          tokenize: false
+      sorts:
+        created:
+          id: created
+          table: login_log
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: ''
+          entity_type: login_log
+          entity_field: created
+          plugin_id: field
+  page_1:
+    display_plugin: page
+    id: page_1
+    display_title: Page
+    position: 1
+    display_options:
+      display_extenders: {  }
+      path: admin/reports/logins

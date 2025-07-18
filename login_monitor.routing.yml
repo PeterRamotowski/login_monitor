@@ -1,0 +1,30 @@
+login_monitor.settings:
+  path: '/admin/config/people/login-monitor'
+  defaults:
+    _title: 'Login monitor settings'
+    _form: 'Drupal\login_monitor\Form\LoginMonitorSettingsForm'
+  requirements:
+    _permission: 'administer login monitor settings'
+
+entity.login_log.collection:
+  path: '/admin/reports/logins'
+  defaults:
+    _entity_list: 'login_log'
+    _title: 'Login Log'
+  requirements:
+    _permission: 'view login log entities'
+  options:
+    _admin_route: TRUE
+
+entity.login_log.delete_form:
+  path: '/admin/reports/logins/{login_log}/delete'
+  defaults:
+    _entity_form: 'login_log.delete'
+    _title: 'Delete Login Log'
+  requirements:
+    _permission: 'administer login log entities'
+  options:
+    _admin_route: TRUE
+    parameters:
+      login_log:
+        type: entity:login_log

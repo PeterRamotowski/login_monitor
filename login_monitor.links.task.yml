@@ -1,0 +1,5 @@
+entity.login_log.delete_form:
+  type: 'entity:login_log'
+  route_name: 'entity.login_log.delete_form'
+  title: 'Delete'
+  weight: 2
