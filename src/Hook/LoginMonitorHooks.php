@@ -185,21 +185,18 @@ class LoginMonitorHooks {
    */
   #[Hook('mail')]
   public function mail(string $key, array &$message, array $params): void {
-    $siteConfig = $this->configFactory->get('system.site');
-    $siteName = $siteConfig->get('name');
-    $siteMail = $siteConfig->get('mail');
-    $message['headers']['From'] = $siteName . '<' . $siteMail . '>';
-    $message['headers']['Return-Path'] = $siteMail;
-    $message['headers']['Sender'] = $siteMail;
-    $message['headers']['Reply-to'] = $siteMail;
-    $message['subject'] = $params['subject'];
-    $message['body'] = $params['body'];
-
     switch ($key) {
       case 'login_notify':
-        break;
-
       case 'login_report':
+        $siteConfig = $this->configFactory->get('system.site');
+        $siteName = $siteConfig->get('name');
+        $siteMail = $siteConfig->get('mail');
+        $message['headers']['From'] = $siteName . '<' . $siteMail . '>';
+        $message['headers']['Return-Path'] = $siteMail;
+        $message['headers']['Sender'] = $siteMail;
+        $message['headers']['Reply-to'] = $siteMail;
+        $message['subject'] = $params['subject'];
+        $message['body'] = $params['body'];
         break;
     }
   }
