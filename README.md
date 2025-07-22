@@ -167,13 +167,13 @@ configure role-based tracking to exclude certain user types from monitoring.
 ## Similar modules
 
 - [ECA: Event - Condition - Action](https://www.drupal.org/project/eca): A comprehensive event-driven automation framework that can handle user login events among many other Drupal events. While ECA is more powerful and flexible, it requires significant configuration and technical knowledge to set up login monitoring workflows. ECA is ideal for complex automation needs but overkill if you only need login monitoring.
-- [Events Log Track](https://www.drupal.org/project/events_log_track): Log more event types than just user logins. No notifications and reports.
-- [Login History](https://www.drupal.org/project/login_history): Doesn't log failed login attempts, missing role tracking. No notifications and reports. Provides block with information about the user's last login.
-- [User Login Tracker](https://www.drupal.org/project/user_login_tracker): Lacks some features like email notifications and reports. Doesn't log failed login attempts, missing role tracking. Not compatible with Drupal 11.
-- [Login Notification](https://www.drupal.org/project/login_notification): Not compatible with Drupal 11. Notify via on page messages instead of email. No reports or detailed logging.
+- [Events Log Track](https://www.drupal.org/project/events_log_track): Log more event types than just user logins. No notifications and statistical reports.
+- [Login History](https://www.drupal.org/project/login_history): Doesn't log failed login attempts, missing role tracking. No notifications and statistical reports. Provides block with information about the user's last login.
+- [User Login Tracker](https://www.drupal.org/project/user_login_tracker): Lacks some features like email notifications and statistical reports. Doesn't log failed login attempts, missing role tracking. Not compatible with Drupal 11.
+- [Login Notification](https://www.drupal.org/project/login_notification): Not compatible with Drupal 11. Notify via on page messages instead of email. No statistical reports or detailed logging.
 - [User Update Notify](https://www.drupal.org/project/user_update_notify): Doesn't save logs. Focuses on user updates, not login events. Send email notifications.
 - [Login tracker](https://www.drupal.org/project/login_tracker): No further development. Not compatible with Drupal 11.
-- [Login Activity](https://www.drupal.org/project/login_activity): No further development. Not compatible with Drupal 11. Provides basic login tracking without advanced features like email notifications or reports.
+- [Login Activity](https://www.drupal.org/project/login_activity): No further development. Not compatible with Drupal 11. Provides basic login tracking without advanced features like email notifications or statistical reports.
 - [Sign Up Tracker](https://www.drupal.org/project/sign_up_tracker): Logs only user registrations. Not compatible with Drupal 11.
 
 
