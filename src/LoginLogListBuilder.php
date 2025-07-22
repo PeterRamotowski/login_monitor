@@ -7,12 +7,22 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\login_monitor\Entity\LoginLogInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a class to build a listing of Login Log entities.
  */
 class LoginLogListBuilder extends EntityListBuilder {
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
 
   /**
    * The date formatter service.
@@ -28,11 +38,14 @@ class LoginLogListBuilder extends EntityListBuilder {
    *   The entity type definition.
    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
    *   The entity storage class.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
    */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter) {
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, EntityTypeManagerInterface $entity_type_manager, DateFormatterInterface $date_formatter) {
     parent::__construct($entity_type, $storage);
+    $this->entityTypeManager = $entity_type_manager;
     $this->dateFormatter = $date_formatter;
   }
 
@@ -43,6 +56,7 @@ class LoginLogListBuilder extends EntityListBuilder {
     return new static(
       $entity_type,
       $container->get('entity_type.manager')->getStorage($entity_type->id()),
+      $container->get('entity_type.manager'),
       $container->get('date.formatter')
     );
   }
@@ -50,13 +64,26 @@ class LoginLogListBuilder extends EntityListBuilder {
   /**
    * {@inheritdoc}
    */
+  public function load() {
+    $entityQuery = $this->getStorage()->getQuery()
+      ->accessCheck(TRUE)
+      ->pager(10)
+      ->sort('created', 'DESC');
+
+    return $this->storage->loadMultiple($entityQuery->execute());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildHeader() {
-    $header['created'] = $this->t('Created');
-    $header['user'] = $this->t('User');
-    $header['typed_username'] = $this->t('Typed Username');
+    $header['created'] = $this->t('Event date');
+    $header['event_type'] = $this->t('Event type');
+    $header['typed_username'] = $this->t('Username');
+    $header['concurrent_sessions'] = $this->t('Concurrent Sessions');
+    $header['user_roles'] = $this->t('User roles');
     $header['ip_address'] = $this->t('IP Address');
     $header['user_agent'] = $this->t('User Agent');
-    $header['concurrent_sessions'] = $this->t('Concurrent Sessions');
     return $header + parent::buildHeader();
   }
 
@@ -66,13 +93,45 @@ class LoginLogListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity) {
     /** @var \Drupal\login_monitor\Entity\LoginLog $entity */
     $row['created'] = $this->dateFormatter->format($entity->getCreatedTime());
-    $row['user'] = $entity->getUser() ? $entity->getUser()->getDisplayName() : $this->t('N/A');
-    $row['typed_username'] = $entity->getTypedUsername() ?: $this->t('N/A');
-    $row['ip_address'] = $entity->getIpAddress() ?: $this->t('N/A');
-    $user_agent = $entity->getUserAgent();
-    $row['user_agent'] = $user_agent ? (strlen($user_agent) > 50 ? substr($user_agent, 0, 50) . '...' : $user_agent) : $this->t('N/A');
+    $row['event_type'] = $entity->getEventTypeLabel();
+    $row['typed_username'] = $entity->getTypedUsername() ?: '';
     $row['concurrent_sessions'] = $entity->getConcurrentSessions() ?? 1;
+    $row['user_roles'] = $this->getUserRoles($entity);
+    $row['ip_address'] = $entity->getIpAddress() ?: '';
+    $user_agent = $entity->getUserAgent();
+    $row['user_agent'] = $user_agent ? (strlen($user_agent) > 50 ? substr($user_agent, 0, 50) . '...' : $user_agent) : '';
     return $row + parent::buildRow($entity);
+  }
+
+  /**
+   * Gets the user roles label for a login log entity.
+   *
+   * @param \Drupal\login_monitor\Entity\LoginLogInterface $entity
+   *   The login log entity.
+   *
+   * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   *   The user roles label or empty string.
+   */
+  protected function getUserRoles(LoginLogInterface $entity): string|TranslatableMarkup {
+    $user = $entity->getUser();
+    if (!$user || $user->isAnonymous()) {
+      return '';
+    }
+
+    $roleStorage = $this->entityTypeManager->getStorage('user_role');
+    $roles = $user->getRoles(TRUE);
+    $roleLabels = [];
+    foreach ($roles as $roleId) {
+      if ($role = $roleStorage->load($roleId)) {
+        $roleLabels[] = $role->label();
+      }
+    }
+
+    if (empty($roleLabels)) {
+      return '';
+    }
+
+    return implode(', ', $roleLabels);
   }
 
   /**

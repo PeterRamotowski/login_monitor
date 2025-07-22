@@ -342,6 +342,26 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
   }
 
   /**
+   * Gets the human-readable label for the event type.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup|string
+   *   The human-readable label for the event type.
+   */
+  public function getEventTypeLabel() {
+    $eventType = $this->getEventType();
+    if ($eventType) {
+      try {
+        $eventTypeEnum = LoginEventType::from($eventType);
+        return $eventTypeEnum->getLabel();
+      }
+      catch (\ValueError $e) {
+        return $eventType;
+      }
+    }
+    return '';
+  }
+
+  /**
    * Get available event types.
    *
    * @return array
