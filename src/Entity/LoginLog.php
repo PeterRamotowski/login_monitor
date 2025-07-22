@@ -5,7 +5,6 @@ namespace Drupal\login_monitor\Entity;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityAccessControlHandler;
-use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityViewBuilder;
 use Drupal\Core\Entity\Routing\AdminHtmlRouteProvider;
@@ -58,7 +57,6 @@ use Drupal\views\EntityViewsData;
 class LoginLog extends ContentEntityBase implements LoginLogInterface {
 
   use EntityOwnerTrait;
-  use EntityChangedTrait;
 
   /**
    * {@inheritdoc}

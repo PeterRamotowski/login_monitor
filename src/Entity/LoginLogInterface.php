@@ -3,7 +3,6 @@
 namespace Drupal\login_monitor\Entity;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityChangedInterface;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\UserInterface;
 
@@ -12,7 +11,7 @@ use Drupal\user\UserInterface;
  *
  * @ingroup login_monitor
  */
-interface LoginLogInterface extends ContentEntityInterface, EntityChangedInterface, EntityOwnerInterface {
+interface LoginLogInterface extends ContentEntityInterface, EntityOwnerInterface {
 
   /**
    * Gets the user entity.
