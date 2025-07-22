@@ -110,13 +110,14 @@ class LoginLogSavingLogsTest extends KernelTestBase {
 
     // Verify the log entry.
     $storage = $this->container->get('entity_type.manager')->getStorage('login_log');
-    $logs = $storage->loadByProperties(['user_id' => $user->id()]);
+    $logs = $storage->loadByProperties(['uid' => $user->id()]);
 
     $this->assertCount(1, $logs);
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
+
     $this->assertEquals(LoginEventType::SuccessLogin->value, $log->getEventType());
-    $this->assertEquals($user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($user->id(), $log->getOwnerId());
   }
 
   /**
@@ -142,7 +143,7 @@ class LoginLogSavingLogsTest extends KernelTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::SuccessLoginOnetime->value, $log->getEventType());
-    $this->assertEquals($user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($user->id(), $log->getOwnerId());
 
     // Verify the event type label is correct.
     $this->assertEquals('Successful One-time Login', LoginEventType::SuccessLoginOnetime->getLabel()->render());
@@ -163,7 +164,7 @@ class LoginLogSavingLogsTest extends KernelTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::FailedLoginInvalidUser->value, $log->getEventType());
-    $this->assertNull($log->get('user_id')->target_id);
+    $this->assertEquals(0, $log->getOwnerId());
   }
 
   /**
@@ -188,7 +189,7 @@ class LoginLogSavingLogsTest extends KernelTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::FailedLoginValidUser->value, $log->getEventType());
-    $this->assertEquals($user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($user->id(), $log->getOwnerId());
   }
 
   /**
@@ -210,7 +211,7 @@ class LoginLogSavingLogsTest extends KernelTestBase {
     $query = $this->container->get('entity_type.manager')
       ->getStorage('login_log')
       ->getQuery()
-      ->condition('user_id', $user->id())
+      ->condition('uid', $user->id())
       ->condition('event_type', LoginEventType::FailedLoginBlockedUser->value)
       ->accessCheck(FALSE);
 
@@ -241,7 +242,7 @@ class LoginLogSavingLogsTest extends KernelTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::Logout->value, $log->getEventType());
-    $this->assertEquals($user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($user->id(), $log->getOwnerId());
   }
 
   /**

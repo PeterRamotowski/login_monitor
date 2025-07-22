@@ -210,7 +210,7 @@ class LoginMonitorHooks {
   public function userDelete(UserInterface $account): void {
     $storage = $this->entityTypeManager->getStorage('login_log');
     $query = $storage->getQuery()
-      ->condition('user_id', $account->id())
+      ->condition('uid', $account->id())
       ->accessCheck(FALSE);
     $loginLogIds = $query->execute();
 

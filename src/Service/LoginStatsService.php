@@ -75,7 +75,7 @@ class LoginStatsService {
    */
   public function getUniqueUsers(int $startTime, int $endTime): int {
     $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['user_id'])
+      ->fields('ll', ['uid'])
       ->condition('created', $startTime, '>=')
       ->condition('created', $endTime, '<=')
       ->distinct();
@@ -99,14 +99,14 @@ class LoginStatsService {
   public function getTopUsers(int $startTime, int $endTime, int $limit = 5): array {
     // Get user IDs with their login counts.
     $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['user_id'])
+      ->fields('ll', ['uid'])
       ->condition('created', $startTime, '>=')
       ->condition('created', $endTime, '<=')
-      ->groupBy('user_id')
+      ->groupBy('uid')
       ->orderBy('login_count', 'DESC')
       ->range(0, $limit);
     $query->addExpression('COUNT(*)', 'login_count');
-    $topUsers = $query->execute()->fetchAllAssoc('user_id');
+    $topUsers = $query->execute()->fetchAllAssoc('uid');
 
     if (empty($topUsers)) {
       return [];

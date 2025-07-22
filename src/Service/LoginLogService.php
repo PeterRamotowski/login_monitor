@@ -37,12 +37,12 @@ class LoginLogService {
 
     $storage = $this->entityTypeManager->getStorage('login_log');
     $entity = $storage->create([
-      'user_id' => $loginEventData->getUserId(),
+      'uid' => $loginEventData->getUserId() ?? 0,
       'event_type' => $eventType->value,
       'concurrent_sessions' => $this->loginEventData->getActiveSessions(),
       'ip_address' => $this->loginEventData->getIpAddress(),
       'user_agent' => $this->loginEventData->getUserAgent(),
-      'typed_username' => $loginEventData->getTypedUsername(),
+      'typed_username' => $loginEventData->getUsername(),
     ]);
     $storage->save($entity);
   }

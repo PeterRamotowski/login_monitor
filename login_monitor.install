@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Update hooks for the Login Monitor module.
+ */
+
+use Drupal\Core\Config\FileStorage;
+
+/**
+ * Remove user_id, uid fields.
+ */
+function login_monitor_update_8001() {
+  $entityDefinitionUpdateManager = \Drupal::entityDefinitionUpdateManager();
+  $fieldStorageDefinition = $entityDefinitionUpdateManager
+    ->getFieldStorageDefinition('user_id', 'login_log');
+  if ($fieldStorageDefinition) {
+    $entityDefinitionUpdateManager
+      ->uninstallFieldStorageDefinition($fieldStorageDefinition);
+  }
+  \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
+  \Drupal::service('router.builder')->rebuild();
+
+  return t('Successfully removed user_id field references.');
+}
+
+/**
+ * Update null typed_username fields with display name from associated user.
+ */
+function login_monitor_update_8002() {
+  $database = \Drupal::database();
+  $entityTypeManager = \Drupal::entityTypeManager();
+
+  $query = $database->select('login_log', 'll')
+    ->fields('ll', ['id', 'uid'])
+    ->condition('ll.typed_username', NULL, 'IS NULL')
+    ->condition('ll.uid', NULL, 'IS NOT NULL');
+
+  $results = $query->execute()->fetchAll();
+
+  $updatedCount = 0;
+
+  foreach ($results as $record) {
+    try {
+      /** @var \Drupal\Core\Session\AccountInterface $user */
+      $user = $entityTypeManager->getStorage('user')->load($record->uid);
+
+      if ($user) {
+        $database->update('login_log')
+          ->fields(['typed_username' => $user->getDisplayName()])
+          ->condition('id', $record->id)
+          ->execute();
+
+        $updatedCount++;
+      }
+    }
+    catch (Exception $e) {
+      \Drupal::logger('login_monitor')->error('Failed to update typed_username for login_log ID @id: @message', [
+        '@id' => $record->id,
+        '@message' => $e->getMessage(),
+      ]);
+    }
+  }
+
+  return t('Successfully updated @count login log entries with user display names.', ['@count' => $updatedCount]);
+}
+
+/**
+ * Refresh the login log list view.
+ */
+function login_monitor_update_8003() {
+  $configFactory = \Drupal::configFactory();
+  $viewConfig = $configFactory->getEditable('views.view.login_log_list');
+
+  $viewConfigPath = \Drupal::service('extension.list.module')->getPath('login_monitor') . '/config/optional';
+  $viewConfigStorage = new FileStorage($viewConfigPath);
+  $viewConfigData = $viewConfigStorage->read('views.view.login_log_list.yml');
+  $viewConfig->setData($viewConfigData)->save(TRUE);
+
+  return t('Successfully updated the login log list view.');
+}

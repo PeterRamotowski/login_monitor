@@ -85,34 +85,6 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-    $fields['user_id'] = BaseFieldDefinition::create('entity_reference')
-      ->setLabel(t('User'))
-      ->setDescription(t('The user who logged in.'))
-      ->setSetting('target_type', 'user')
-      ->setSetting('handler', 'default')
-      ->setCardinality(1)
-      ->setRequired(FALSE)
-      ->setDisplayOptions('view', [
-        'label' => 'above',
-        'type' => 'entity_reference_label',
-        'weight' => 0,
-        'settings' => [
-          'link' => TRUE,
-        ],
-      ])
-      ->setDisplayOptions('form', [
-        'type' => 'entity_reference_autocomplete',
-        'weight' => 0,
-        'settings' => [
-          'match_operator' => 'CONTAINS',
-          'size' => '60',
-          'autocomplete_type' => 'tags',
-          'placeholder' => '',
-        ],
-      ])
-      ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE);
-
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the login was happened.'))
@@ -215,7 +187,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
    *   The user entity or null if not set.
    */
   public function getUser(): ?UserInterface {
-    return $this->get('user_id')?->entity;
+    return $this->get('uid')?->entity;
   }
 
   /**
@@ -227,7 +199,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
    * @return $this
    */
   public function setUser(?UserInterface $user = NULL) {
-    $this->set('user_id', $user ? $user->id() : NULL);
+    $this->set('uid', $user ? $user->id() : NULL);
     return $this;
   }
 

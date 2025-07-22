@@ -124,7 +124,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     // Check that a login log entry was created.
     $storage = $this->container->get('entity_type.manager')->getStorage('login_log');
     $logs = $storage->loadByProperties([
-      'user_id' => $form_test_user->id(),
+      'uid' => $form_test_user->id(),
       'event_type' => LoginEventType::SuccessLogin->value,
     ]);
 
@@ -133,7 +133,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::SuccessLogin->value, $log->getEventType());
-    $this->assertEquals($form_test_user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($form_test_user->id(), $log->get('uid')->target_id);
   }
 
   /**
@@ -246,7 +246,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     // Check that a logout log entry was created.
     $storage = $this->container->get('entity_type.manager')->getStorage('login_log');
     $logs = $storage->loadByProperties([
-      'user_id' => $form_test_user->id(),
+      'uid' => $form_test_user->id(),
       'event_type' => LoginEventType::Logout->value,
     ]);
 
@@ -255,7 +255,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::Logout->value, $log->getEventType());
-    $this->assertEquals($form_test_user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($form_test_user->id(), $log->get('uid')->target_id);
   }
 
   /**
@@ -303,7 +303,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     // Check that a one-time login log entry was created.
     $storage = $this->container->get('entity_type.manager')->getStorage('login_log');
     $logs = $storage->loadByProperties([
-      'user_id' => $onetime_user->id(),
+      'uid' => $onetime_user->id(),
       'event_type' => LoginEventType::SuccessLoginOnetime->value,
     ]);
 
@@ -312,7 +312,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
     $log = reset($logs);
     $this->assertEquals(LoginEventType::SuccessLoginOnetime->value, $log->getEventType());
-    $this->assertEquals($onetime_user->id(), $log->get('user_id')->target_id);
+    $this->assertEquals($onetime_user->id(), $log->get('uid')->target_id);
   }
 
   /**
@@ -343,28 +343,30 @@ class LoginMonitorLoginTest extends BrowserTestBase {
 
     // Create a regular login log.
     $regularLog = $storage->create([
-      'user_id' => $this->testUser->id(),
+      'uid' => $this->testUser->id(),
       'event_type' => LoginEventType::SuccessLogin->value,
       'ip_address' => '127.0.0.1',
       'user_agent' => 'Test Browser',
       'created' => \Drupal::time()->getRequestTime(),
+      'typed_username' => $this->testUser->getDisplayName(),
     ]);
     $regularLog->save();
 
     // Create a logout log.
     $logoutLog = $storage->create([
-      'user_id' => $this->testUser->id(),
+      'uid' => $this->testUser->id(),
       'event_type' => LoginEventType::Logout->value,
       'ip_address' => '127.0.0.1',
       'user_agent' => 'Test Browser',
       'created' => \Drupal::time()->getRequestTime(),
+      'typed_username' => $this->testUser->getDisplayName(),
     ]);
     $logoutLog->save();
 
     // Create a failed login log.
     $failedLog = $storage->create([
-    // Failed logins might not have a user_id.
-      'user_id' => NULL,
+    // Failed logins might not have a uid.
+      'uid' => 0,
       'event_type' => LoginEventType::FailedLoginInvalidUser->value,
       'ip_address' => '127.0.0.1',
       'user_agent' => 'Test Browser',
@@ -382,7 +384,7 @@ class LoginMonitorLoginTest extends BrowserTestBase {
 
     // Check that the page contains login log information.
     // The exact text may vary, so we check for general indicators.
-    $this->assertSession()->pageTextContains($this->testUser->getAccountName());
+    $this->assertSession()->pageTextContains($this->testUser->getDisplayName());
     $this->assertSession()->pageTextContains('127.0.0.1');
 
     // Verify we have log entries displayed.
@@ -469,12 +471,12 @@ class LoginMonitorLoginTest extends BrowserTestBase {
     // Check that multiple login log entries were created.
     $storage = $this->container->get('entity_type.manager')->getStorage('login_log');
     $loginLogs = $storage->loadByProperties([
-      'user_id' => $multi_user->id(),
+      'uid' => $multi_user->id(),
       'event_type' => LoginEventType::SuccessLogin->value,
     ]);
 
     $logoutLogs = $storage->loadByProperties([
-      'user_id' => $multi_user->id(),
+      'uid' => $multi_user->id(),
       'event_type' => LoginEventType::Logout->value,
     ]);
 
