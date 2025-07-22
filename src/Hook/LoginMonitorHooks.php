@@ -219,12 +219,11 @@ class LoginMonitorHooks {
       $storage->delete($loginLogs);
 
       $this->logger->info(
-        'Deleted @count login log entries for user @user (@uid).',
-        [
+        $this->t('Deleted @count login log entries for user @user (@uid).', [
           '@count' => count($loginLogIds),
           '@user' => $account->getAccountName(),
           '@uid' => $account->id(),
-        ]
+        ])
       );
     }
   }
@@ -247,11 +246,10 @@ class LoginMonitorHooks {
 
         if ($deletedCount > 0) {
           $this->logger->info(
-            'Deleted @count old login log entries (older than @days days).',
-            [
+            $this->t('Deleted @count old login log entries (older than @days days).', [
               '@count' => $deletedCount,
               '@days' => $retentionDays,
-            ]
+            ])
           );
         }
       }
