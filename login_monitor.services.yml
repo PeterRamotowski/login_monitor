@@ -15,11 +15,12 @@ services:
     arguments:
       - '@config.factory'
       - '@plugin.manager.mail'
-      - '@logger.channel.mail'
+      - '@logger.channel.login_monitor'
       - '@token'
       - '@date.formatter'
       - '@datetime.time'
       - '@current_user'
+      - '@flood'
 
   login_monitor.login_log_service:
     class: Drupal\login_monitor\Service\LoginLogService
@@ -45,6 +46,8 @@ services:
       - '@language_manager'
       - '@logger.channel.login_monitor'
       - '@login_monitor.stats_service'
+      - '@lock'
+      - '@date.formatter'
 
   login_monitor.login_event_data:
     class: Drupal\login_monitor\Service\LoginEventData
@@ -52,16 +55,6 @@ services:
       - '@request_stack'
       - '@datetime.time'
       - '@database'
-
-  login_monitor.config:
-    class: \Drupal\Core\Config\ConfigFactoryInterface
-    factory: ['@config.factory', 'get']
-    arguments: ['login_monitor.settings']
-
-  logger.channel.mail:
-    class: Drupal\Core\Logger\LoggerChannel
-    factory: ['@logger.factory', 'get']
-    arguments: ['mail']
 
   logger.channel.login_monitor:
     class: Drupal\Core\Logger\LoggerChannel

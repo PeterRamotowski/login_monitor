@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Service;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Datetime\DateFormatterInterface;
+use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -12,22 +15,37 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Utility\Token;
 use Drupal\login_monitor\LoginEventType;
+use Drupal\login_monitor\Service\LoginEventDataInterface;
 
 /**
  * Service for handling login email notifications.
  */
-class LoginNotificationService {
+final class LoginNotificationService {
 
   use StringTranslationTrait;
 
+  /**
+   * The notification flood control event name.
+   */
+  private const FLOOD_EVENT_NAME = 'login_monitor.notification';
+
+  /**
+   * The notification flood control time window.
+   */
+  private const FLOOD_WINDOW = 3600;
+
+  /**
+   * Constructs a login notification service.
+   */
   public function __construct(
-    private ConfigFactoryInterface $configFactory,
-    private MailManagerInterface $mailManager,
-    private LoggerChannelInterface $logger,
-    private Token $token,
-    private DateFormatterInterface $dateFormatter,
-    private TimeInterface $time,
-    private AccountProxyInterface $currentUser,
+    private readonly ConfigFactoryInterface $configFactory,
+    private readonly MailManagerInterface $mailManager,
+    private readonly LoggerChannelInterface $logger,
+    private readonly Token $token,
+    private readonly DateFormatterInterface $dateFormatter,
+    private readonly TimeInterface $time,
+    private readonly AccountProxyInterface $currentUser,
+    private readonly ?FloodInterface $flood = NULL,
   ) {}
 
   /**
@@ -35,13 +53,23 @@ class LoginNotificationService {
    *
    * @param \Drupal\login_monitor\LoginEventType $eventType
    *   The type of event to log.
-   * @param LoginEventData $loginEventData
-   *   The login event data.
+   * @param \Drupal\login_monitor\Service\LoginEventDataInterface $loginEventData
+   *   The login event data or a pre-captured payload snapshot.
    */
-  public function sendEmailNotification(LoginEventType $eventType, LoginEventData $loginEventData): void {
+  public function sendEmailNotification(LoginEventType $eventType, LoginEventDataInterface $loginEventData): void {
     $settings = $this->configFactory->get('login_monitor.settings');
 
     if ($settings->get('send_email_notifications') !== TRUE) {
+      return;
+    }
+
+    $identifier = hash('sha256', $loginEventData->getIpAddress() . ':' . $eventType->value);
+    $rateLimit = (int) ($settings->get('notification_rate_limit') ?? 10);
+    if ($rateLimit > 0 && $this->flood && !$this->flood->isAllowed(self::FLOOD_EVENT_NAME, $rateLimit, self::FLOOD_WINDOW, $identifier)) {
+      $this->logger->warning('Suppressed login monitor notification flood for @event from @ip.', [
+        '@event' => $eventType->value,
+        '@ip' => $loginEventData->getIpAddress(),
+      ]);
       return;
     }
 
@@ -70,21 +98,26 @@ class LoginNotificationService {
     }
 
     $langcode = $this->currentUser->getPreferredLangcode();
+    if ($rateLimit > 0 && $this->flood) {
+      $this->flood->register(self::FLOOD_EVENT_NAME, self::FLOOD_WINDOW, $identifier);
+    }
 
     $message = $this->mailManager->mail('login_monitor', 'login_notify', $recipientEmail, $langcode, $emailParams, NULL, TRUE);
 
     if ($message['result'] === TRUE) {
       $this->logger->notice(
-        $this->t('An email notification of user login has been sent to @email.', [
+        'An email notification of user login has been sent to @email.',
+        [
           '@email' => $recipientEmail,
-        ])
+        ],
       );
     }
     else {
       $this->logger->error(
-        $this->t('There was a problem sending email notification to @email.', [
+        'There was a problem sending email notification to @email.',
+        [
           '@email' => $recipientEmail,
-        ])
+        ],
       );
     }
   }

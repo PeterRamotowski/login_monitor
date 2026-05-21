@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -13,28 +17,31 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 final class LoginMonitorSettingsForm extends ConfigFormBase {
 
   /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
    * Constructs a LoginMonitorSettingsForm object.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The configuration factory.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typed_config_manager
+   *   The typed configuration manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
-    $this->entityTypeManager = $entity_type_manager;
+  public function __construct(
+    ConfigFactoryInterface $config_factory,
+    TypedConfigManagerInterface $typed_config_manager,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+  ) {
+    parent::__construct($config_factory, $typed_config_manager);
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container): static {
     return new static(
-      $container->get('entity_type.manager')
+      $container->get('config.factory'),
+      $container->get('config.typed'),
+      $container->get('entity_type.manager'),
     );
   }
 
@@ -84,7 +91,23 @@ final class LoginMonitorSettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Send email notifications'),
       '#description' => $this->t('Enable email notifications when users log in.'),
-      '#default_value' => $config->get('send_email_notifications') ?? TRUE,
+      '#default_value' => $config->get('send_email_notifications') ?? FALSE,
+    ];
+
+    $form['email_notifications']['notification_delivery'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Delivery timing'),
+      '#description' => $this->t('Choose when notifications are dispatched. <em>Immediate</em> sends the email as soon as the login event occurs. <em>Delayed (via cron)</em> queues notifications and sends them during the next cron run, which reduces request latency.'),
+      '#options' => [
+        'immediate' => $this->t('Immediate'),
+        'delayed' => $this->t('Delayed (via cron)'),
+      ],
+      '#default_value' => $config->get('notification_delivery') ?? 'immediate',
+      '#states' => [
+        'visible' => [
+          ':input[name="send_email_notifications"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
 
     $form['email_notifications']['email_recipient'] = [
@@ -112,10 +135,24 @@ final class LoginMonitorSettingsForm extends ConfigFormBase {
       ],
     ];
 
+    $form['email_notifications']['notification_rate_limit'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Notification rate limit'),
+      '#description' => $this->t('Maximum email notifications per IP address and event type per hour. Set to 0 to disable notification rate limiting.'),
+      '#default_value' => $config->get('notification_rate_limit') ?? 10,
+      '#min' => 0,
+      '#step' => 1,
+      '#states' => [
+        'visible' => [
+          ':input[name="send_email_notifications"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+
     $form['email_notifications']['token_help'] = [
       '#theme' => 'token_tree_link',
       '#theme_wrappers' => ['container'],
-      '#token_types' => ['user', 'site', 'current-date'],
+      '#token_types' => ['login_monitor', 'user', 'site', 'current-date'],
       '#show_restricted' => TRUE,
       '#weight' => 90,
       '#states' => [
@@ -206,7 +243,7 @@ final class LoginMonitorSettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Enable automatic log cleanup'),
       '#description' => $this->t('Automatically delete old login logs via cron.'),
-      '#default_value' => $config->get('enable_log_cleanup') ?? FALSE,
+      '#default_value' => $config->get('enable_log_cleanup') ?? TRUE,
     ];
 
     $retention_options = [
@@ -223,7 +260,7 @@ final class LoginMonitorSettingsForm extends ConfigFormBase {
       '#title' => $this->t('Delete logs older than'),
       '#description' => $this->t('Login logs older than the selected period will be automatically deleted during cron runs.'),
       '#options' => $retention_options,
-      '#default_value' => $config->get('log_retention_days') ?? '365',
+      '#default_value' => (string) ($config->get('log_retention_days') ?? 90),
       '#states' => [
         'visible' => [
           ':input[name="enable_log_cleanup"]' => ['checked' => TRUE],
@@ -242,14 +279,16 @@ final class LoginMonitorSettingsForm extends ConfigFormBase {
     $tracked_roles = array_filter($form_state->getValue('tracked_roles'));
 
     $this->config('login_monitor.settings')
-      ->set('enable_login_logging', $form_state->getValue('enable_login_logging'))
-      ->set('send_email_notifications', $form_state->getValue('send_email_notifications'))
+      ->set('enable_login_logging', (bool) $form_state->getValue('enable_login_logging'))
+      ->set('send_email_notifications', (bool) $form_state->getValue('send_email_notifications'))
+      ->set('notification_delivery', $form_state->getValue('notification_delivery'))
+      ->set('notification_rate_limit', (int) $form_state->getValue('notification_rate_limit'))
       ->set('tracked_roles', array_values($tracked_roles))
       ->set('email_content', $form_state->getValue('email_content'))
       ->set('email_recipient', $form_state->getValue('email_recipient'))
-      ->set('enable_log_cleanup', $form_state->getValue('enable_log_cleanup'))
-      ->set('log_retention_days', $form_state->getValue('log_retention_days'))
-      ->set('enable_email_reports', $form_state->getValue('enable_email_reports'))
+      ->set('enable_log_cleanup', (bool) $form_state->getValue('enable_log_cleanup'))
+      ->set('log_retention_days', (int) $form_state->getValue('log_retention_days'))
+      ->set('enable_email_reports', (bool) $form_state->getValue('enable_email_reports'))
       ->set('report_frequency', $form_state->getValue('report_frequency'))
       ->set('report_recipient', $form_state->getValue('report_recipient'))
       ->save();

@@ -9,6 +9,12 @@ login_monitor.settings:
     send_email_notifications:
       type: boolean
       label: 'Send admin email notifications'
+    notification_delivery:
+      type: string
+      label: 'Notification delivery mode'
+    notification_rate_limit:
+      type: integer
+      label: 'Notification rate limit'
     tracked_roles:
       type: sequence
       label: 'User roles to monitor'

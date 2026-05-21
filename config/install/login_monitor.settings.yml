@@ -1,5 +1,7 @@
 enable_login_logging: true
 send_email_notifications: true
+notification_delivery: 'immediate'
+notification_rate_limit: 10
 tracked_roles: []
 email_recipient: ''
 email_content: "Event type: [login_monitor:event_type_label]\r\nUsername: [login_monitor:username]"
