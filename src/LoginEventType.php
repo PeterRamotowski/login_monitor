@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor;
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Enum for Login Log event types.
@@ -20,7 +24,7 @@ enum LoginEventType: string {
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    *   The label for the event type.
    */
-  public function getLabel() {
+  public function getLabel(): TranslatableMarkup {
     return match ($this) {
       self::SuccessLogin => t('Successful Login'),
       self::SuccessLoginOnetime => t('Successful One-time Login'),

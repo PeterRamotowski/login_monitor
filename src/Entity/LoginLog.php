@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
@@ -13,6 +15,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\login_monitor\Form\LoginLogDeleteForm;
 use Drupal\login_monitor\LoginEventType;
 use Drupal\login_monitor\LoginLogListBuilder;
+use Drupal\login_monitor\LoginMonitorLimits;
 use Drupal\user\EntityOwnerTrait;
 use Drupal\user\UserInterface;
 use Drupal\views\EntityViewsData;
@@ -61,7 +64,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
   /**
    * {@inheritdoc}
    */
-  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
     $fields += static::ownerBaseFieldDefinitions($entity_type);
 
@@ -136,23 +139,21 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-    $fields['user_agent'] = BaseFieldDefinition::create('string_long')
+    $fields['user_agent'] = BaseFieldDefinition::create('string')
       ->setLabel(t('User Agent'))
       ->setDescription(t('The user agent string from the browser that was used to log in.'))
+      ->setSettings([
+        'max_length' => LoginMonitorLimits::USER_AGENT_MAX_LENGTH,
+        'text_processing' => 0,
+      ])
       ->setDisplayOptions('view', [
         'label' => 'above',
         'type' => 'string',
         'weight' => 40,
-        'settings' => [
-          'trim_length' => 200,
-        ],
       ])
       ->setDisplayOptions('form', [
-        'type' => 'string_textarea',
+        'type' => 'string_textfield',
         'weight' => 40,
-        'settings' => [
-          'rows' => 3,
-        ],
       ])
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
@@ -161,7 +162,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
       ->setLabel(t('Typed Username'))
       ->setDescription(t('The username that was typed in the login form (for failed login attempts).'))
       ->setSettings([
-        'max_length' => 255,
+        'max_length' => LoginMonitorLimits::USERNAME_MAX_LENGTH,
         'text_processing' => 0,
       ])
       ->setRequired(FALSE)
@@ -187,7 +188,8 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
    *   The user entity or null if not set.
    */
   public function getUser(): ?UserInterface {
-    return $this->get('uid')?->entity;
+    $user = $this->get('uid')->entity;
+    return $user instanceof UserInterface ? $user : NULL;
   }
 
   /**
@@ -210,7 +212,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
    *   The created timestamp.
    */
   public function getCreatedTime(): int {
-    return $this->get('created')->value;
+    return (int) $this->get('created')->value;
   }
 
   /**
@@ -233,7 +235,7 @@ class LoginLog extends ContentEntityBase implements LoginLogInterface {
    *   The number of concurrent sessions.
    */
   public function getConcurrentSessions(): int {
-    return $this->get('concurrent_sessions')->value;
+    return (int) $this->get('concurrent_sessions')->value;
   }
 
   /**

@@ -1,22 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Service;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\login_monitor\LoginEventType;
+use Drupal\login_monitor\LoginMonitorLimits;
 
 /**
  * Service for handling login log.
  */
-class LoginLogService {
+final class LoginLogService {
 
+  /**
+   * Constructs a login log service.
+   */
   public function __construct(
-    private EntityTypeManagerInterface $entityTypeManager,
-    private TimeInterface $time,
-    private ConfigFactoryInterface $configFactory,
-    private LoginEventData $loginEventData,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly TimeInterface $time,
+    private readonly ConfigFactoryInterface $configFactory,
   ) {}
 
   /**
@@ -39,10 +44,10 @@ class LoginLogService {
     $entity = $storage->create([
       'uid' => $loginEventData->getUserId() ?? 0,
       'event_type' => $eventType->value,
-      'concurrent_sessions' => $this->loginEventData->getActiveSessions(),
-      'ip_address' => $this->loginEventData->getIpAddress(),
-      'user_agent' => $this->loginEventData->getUserAgent(),
-      'typed_username' => $loginEventData->getUsername(),
+      'concurrent_sessions' => $loginEventData->getActiveSessions(),
+      'ip_address' => $loginEventData->getIpAddress(),
+      'user_agent' => $loginEventData->getUserAgent(),
+      'typed_username' => $loginEventData->getTypedUsername() ?? $loginEventData->getUsername(),
     ]);
     $storage->save($entity);
   }
@@ -64,18 +69,25 @@ class LoginLogService {
     $storage = $this->entityTypeManager->getStorage('login_log');
     $cutoffTime = $this->time->getRequestTime() - ($retentionDays * 24 * 60 * 60);
 
-    $query = $storage->getQuery()
-      ->condition('created', $cutoffTime, '<')
-      ->accessCheck(FALSE);
-    $loginLogIds = $query->execute();
+    $deletedCount = 0;
 
-    if (!empty($loginLogIds)) {
+    do {
+      $loginLogIds = $storage->getQuery()
+        ->condition('created', $cutoffTime, '<')
+        ->accessCheck(FALSE)
+        ->range(0, LoginMonitorLimits::DELETE_BATCH_SIZE)
+        ->execute();
+
+      if (empty($loginLogIds)) {
+        break;
+      }
+
       $loginLogs = $storage->loadMultiple($loginLogIds);
       $storage->delete($loginLogs);
-      return count($loginLogIds);
-    }
+      $deletedCount += count($loginLogIds);
+    } while (count($loginLogIds) === LoginMonitorLimits::DELETE_BATCH_SIZE);
 
-    return 0;
+    return $deletedCount;
   }
 
 }

@@ -1,16 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Service;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\login_monitor\LoginMonitorLimits;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Service for handling login event data.
  */
-class LoginEventData {
+final class LoginEventData implements LoginEventDataInterface {
 
   /**
    * The user for this login event.
@@ -29,11 +33,22 @@ class LoginEventData {
 
   private ?string $typedUsername = NULL;
 
+  /**
+   * Constructs a login event data service.
+   */
   public function __construct(
-    private RequestStack $requestStack,
-    private TimeInterface $time,
-    private Connection $database,
+    private readonly RequestStack $requestStack,
+    private readonly TimeInterface $time,
+    private readonly Connection $database,
   ) {}
+
+  /**
+   * Clears per-event state before processing a new login event.
+   */
+  public function reset(): void {
+    $this->user = NULL;
+    $this->typedUsername = NULL;
+  }
 
   /**
    * Set the user for this instance.
@@ -46,21 +61,41 @@ class LoginEventData {
    * Set the typed username for this instance.
    */
   public function setTypedUsername(?string $typedUsername = NULL): void {
-    $this->typedUsername = $typedUsername;
+    if ($typedUsername === NULL) {
+      $this->typedUsername = NULL;
+      return;
+    }
+
+    $typedUsername = trim($typedUsername);
+    $this->typedUsername = $typedUsername === ''
+      ? NULL
+      : Unicode::truncate($typedUsername, LoginMonitorLimits::USERNAME_MAX_LENGTH, TRUE, FALSE);
   }
 
   /**
    * Get the IP address of the user.
    */
   public function getIpAddress(): string {
-    return $this->requestStack->getCurrentRequest()->getClientIp();
+    $request = $this->requestStack->getCurrentRequest();
+    return $request ? (string) $request->getClientIp() : '';
   }
 
   /**
    * Get the user agent of the user.
    */
   public function getUserAgent(): ?string {
-    return $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
+    $request = $this->requestStack->getCurrentRequest();
+    if (!$request) {
+      return NULL;
+    }
+
+    $userAgent = $request->headers->get('User-Agent');
+    if ($userAgent === NULL) {
+      return NULL;
+    }
+
+    $userAgent = preg_replace('/[\x00-\x1F\x7F]+/', '', $userAgent) ?? '';
+    return Unicode::truncate($userAgent, LoginMonitorLimits::USER_AGENT_MAX_LENGTH, TRUE, FALSE);
   }
 
   /**
@@ -94,7 +129,7 @@ class LoginEventData {
    * Get the user ID if available.
    */
   public function getUserId(): ?int {
-    return $this->user ? $this->user->id() : NULL;
+    return $this->user ? (int) $this->user->id() : NULL;
   }
 
   /**

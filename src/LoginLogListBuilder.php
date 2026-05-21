@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor;
 
 use Drupal\Core\Datetime\DateFormatterInterface;
@@ -15,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Defines a class to build a listing of Login Log entities.
  */
-class LoginLogListBuilder extends EntityListBuilder {
+final class LoginLogListBuilder extends EntityListBuilder {
 
   /**
    * The entity type manager.
@@ -53,7 +55,7 @@ class LoginLogListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
-    return new static(
+    return new self(
       $entity_type,
       $container->get('entity_type.manager')->getStorage($entity_type->id()),
       $container->get('entity_type.manager'),
@@ -118,18 +120,17 @@ class LoginLogListBuilder extends EntityListBuilder {
       return '';
     }
 
-    $roleStorage = $this->entityTypeManager->getStorage('user_role');
     $roles = $user->getRoles(TRUE);
-    $roleLabels = [];
-    foreach ($roles as $roleId) {
-      if ($role = $roleStorage->load($roleId)) {
-        $roleLabels[] = $role->label();
-      }
-    }
-
-    if (empty($roleLabels)) {
+    if (empty($roles)) {
       return '';
     }
+
+    $roleStorage = $this->entityTypeManager->getStorage('user_role');
+    $roleEntities = $roleStorage->loadMultiple($roles);
+    $roleLabels = array_map(
+      static fn($role): string => (string) $role->label(),
+      $roleEntities,
+    );
 
     return implode(', ', $roleLabels);
   }

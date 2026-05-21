@@ -3,10 +3,12 @@ services:
     class: Drupal\login_monitor\Service\LoginMonitorService
     arguments:
       - '@entity_type.manager'
-      - '@login_monitor.config'
+      - '@config.factory'
       - '@login_monitor.login_event_data'
       - '@login_monitor.login_log_service'
       - '@login_monitor.notification_service'
+      - '@logger.channel.login_monitor'
+      - '@queue'
 
   login_monitor.notification_service:
     class: Drupal\login_monitor\Service\LoginNotificationService
@@ -25,7 +27,6 @@ services:
       - '@entity_type.manager'
       - '@datetime.time'
       - '@config.factory'
-      - '@login_monitor.login_event_data'
 
   login_monitor.stats_service:
     class: Drupal\login_monitor\Service\LoginStatsService
