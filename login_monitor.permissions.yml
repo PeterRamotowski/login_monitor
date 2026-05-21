@@ -9,4 +9,5 @@ administer login log entities:
 
 view login log entities:
   title: 'View login log entities'
-  description: 'Allows viewing of login log entities'
+  description: 'Allows viewing sensitive login audit records.'
+  restrict access: true
