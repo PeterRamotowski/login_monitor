@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Command;
 
 use Drupal\login_monitor\Service\LoginReportService;

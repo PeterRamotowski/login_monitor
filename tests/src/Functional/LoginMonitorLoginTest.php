@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\login_monitor\Functional;
 
 use Drupal\Core\Test\AssertMailTrait;
