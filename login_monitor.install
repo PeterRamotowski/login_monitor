@@ -5,7 +5,11 @@
  * Update hooks for the Login Monitor module.
  */
 
+declare(strict_types=1);
+
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\FileStorage;
+use Drupal\login_monitor\LoginMonitorLimits;
 
 /**
  * Remove user_id, uid fields.
@@ -54,7 +58,7 @@ function login_monitor_update_8002() {
         $updatedCount++;
       }
     }
-    catch (Exception $e) {
+    catch (\Exception $e) {
       \Drupal::logger('login_monitor')->error('Failed to update typed_username for login_log ID @id: @message', [
         '@id' => $record->id,
         '@message' => $e->getMessage(),
@@ -78,4 +82,85 @@ function login_monitor_update_8003() {
   $viewConfig->setData($viewConfigData)->save(TRUE);
 
   return t('Successfully updated the login log list view.');
+}
+
+/**
+ * Add notification limits and cap stored user agent values.
+ */
+function login_monitor_update_8004() {
+  $config = \Drupal::configFactory()->getEditable('login_monitor.settings');
+  if ($config->get('notification_rate_limit') === NULL) {
+    $config->set('notification_rate_limit', 10);
+  }
+  if ($config->get('log_retention_days') !== NULL) {
+    $config->set('log_retention_days', (int) $config->get('log_retention_days'));
+  }
+  $config->save(TRUE);
+
+  $storage = \Drupal::entityTypeManager()->getStorage('login_log');
+  $lastId = 0;
+  do {
+    $ids = $storage->getQuery()
+      ->condition('id', $lastId, '>')
+      ->accessCheck(FALSE)
+      ->sort('id')
+      ->range(0, 100)
+      ->execute();
+
+    if (empty($ids)) {
+      break;
+    }
+
+    $logs = $storage->loadMultiple($ids);
+    foreach ($logs as $log) {
+      /** @var \Drupal\login_monitor\Entity\LoginLogInterface $log */
+      $userAgent = $log->getUserAgent();
+      if ($userAgent === NULL) {
+        continue;
+      }
+
+      $truncatedUserAgent = Unicode::truncate($userAgent, LoginMonitorLimits::USER_AGENT_MAX_LENGTH, TRUE, FALSE);
+      if ($truncatedUserAgent !== $userAgent) {
+        $log->setUserAgent($truncatedUserAgent);
+        $log->save();
+      }
+    }
+
+    $lastId = (int) max($ids);
+  } while (count($ids) === 100);
+
+  $fieldStorageDefinitions = \Drupal::service('entity_field.manager')
+    ->getFieldStorageDefinitions('login_log');
+  if (isset($fieldStorageDefinitions['user_agent'])) {
+    // Alter the database column directly to bypass Drupal's data-migration
+    // guard, which blocks updateFieldStorageDefinition() on tables with data.
+    // Expanding a VARCHAR column is safe and requires no data migration.
+    $database = \Drupal::database();
+    if ($database->schema()->fieldExists('login_log', 'user_agent')) {
+      $database->schema()->changeField('login_log', 'user_agent', 'user_agent', [
+        'type' => 'varchar',
+        'length' => LoginMonitorLimits::USER_AGENT_MAX_LENGTH,
+        'not null' => FALSE,
+      ]);
+    }
+
+    // Sync the last-installed definition so the entity update tracker agrees
+    // with the new column size without requiring a subsequent update run.
+    \Drupal::service('entity.last_installed_schema.repository')
+      ->setLastInstalledFieldStorageDefinition($fieldStorageDefinitions['user_agent']);
+  }
+
+  return t('Updated notification limits and user agent storage.');
+}
+
+/**
+ * Add notification_delivery configuration setting.
+ */
+function login_monitor_update_8005() {
+  $config = \Drupal::configFactory()->getEditable('login_monitor.settings');
+  if ($config->get('notification_delivery') === NULL) {
+    $config->set('notification_delivery', 'immediate')->save(TRUE);
+  }
+
+  return t('Added notification_delivery configuration setting.');
 }
