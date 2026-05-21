@@ -17,7 +17,7 @@
     }
   ],
   "require": {
-    "drupal/token": "*",
+    "drupal/token": "^1.0",
     "drupal/core": "^11"
   }
 }
