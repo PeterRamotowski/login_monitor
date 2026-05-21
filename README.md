@@ -14,6 +14,7 @@ and user activity patterns.
 - Configuration
 - Features
 - Drush commands
+- Security
 - Troubleshooting
 - FAQ
 - Support
@@ -44,6 +45,8 @@ For further information, see [Installing Drupal Modules](https://www.drupal.org/
    - **Enable login logging**: Toggle logging of login events
    - **Send email notifications**: Enable real-time email notifications for
      login events
+   - **Notification rate limit**: Limit notification emails per IP address and
+     event type per hour
    - **Tracked user roles**: Select which user roles should be monitored
    - **Email recipient**: Email address to receive notifications
    - **Email content**: Customize the notification email template using tokens
@@ -58,6 +61,10 @@ For further information, see [Installing Drupal Modules](https://www.drupal.org/
    - **View login log entities**: Allows users to view login logs
    - **Administer login log entities**: Allows full access to login log
      entities including deletion
+
+The "View login log entities" and "Administer login log entities" permissions
+expose sensitive audit data and are marked as restricted permissions. Grant
+them only to trusted operational or security roles.
 
 
 ## Features
@@ -103,6 +110,41 @@ drush login-monitor:send-reports
 This command manually triggers the sending of statistical reports. It's useful
 for testing report functionality or sending reports outside of the normal
 schedule.
+
+
+## Security
+
+### Input validation
+
+Login Monitor records data from three trust boundaries:
+
+- **Typed username**: Read from Drupal's login form state after the form
+  validation pipeline has run. The module trims the value and truncates it to
+  255 characters before account lookup, logging, tokens, or email.
+- **IP address**: Read from Symfony's `Request::getClientIp()`. The stored
+  field is limited to 39 characters for IPv4 and IPv6 values. If the site is
+  behind a reverse proxy, configure Drupal's trusted proxy settings so
+  `X-Forwarded-For` is trusted only from known proxy addresses.
+- **User-Agent header**: Read from the current request headers. Control
+  characters are removed and the value is truncated to 512 characters before
+  storage.
+
+Stored login records include usernames, IP addresses, user agents, event types,
+timestamps, and user identifiers. Treat the login log as sensitive security and
+personal data.
+
+### Brute force
+
+This module does not replace Drupal core authentication protections. Drupal core
+flood control limits login attempts before this module records the allowed
+attempts. Operators should verify the site's `user.flood` settings, including
+IP-based limits (`ip_limit`, `ip_window`) and per-user limits (`user_limit`,
+`user_window`).
+
+Login Monitor adds its own email notification flood guard. By default, it sends
+at most 10 notification emails per IP address and event type per hour. Attempts
+over that limit are still handled by Drupal, but the notification email is
+suppressed and a warning is written to the `login_monitor` log channel.
 
 
 ## Troubleshooting
