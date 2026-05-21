@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\login_monitor\Service;
 
 use Drupal\Component\Datetime\TimeInterface;
@@ -10,12 +12,15 @@ use Drupal\login_monitor\LoginEventType;
 /**
  * Service for querying login statistics from the database.
  */
-class LoginStatsService {
+final class LoginStatsService {
 
+  /**
+   * Constructs a login stats service.
+   */
   public function __construct(
-    private EntityTypeManagerInterface $entityTypeManager,
-    private TimeInterface $time,
-    private Connection $database,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly TimeInterface $time,
+    private readonly Connection $database,
   ) {}
 
   /**
@@ -57,6 +62,7 @@ class LoginStatsService {
     $query = $storage->getQuery()
       ->condition('created', $startTime, '>=')
       ->condition('created', $endTime, '<=')
+      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
       ->accessCheck(FALSE);
 
     return (int) $query->count()->execute();
@@ -78,6 +84,8 @@ class LoginStatsService {
       ->fields('ll', ['uid'])
       ->condition('created', $startTime, '>=')
       ->condition('created', $endTime, '<=')
+      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
+      ->condition('uid', 0, '>')
       ->distinct();
 
     return (int) $query->countQuery()->execute()->fetchField();
@@ -102,6 +110,8 @@ class LoginStatsService {
       ->fields('ll', ['uid'])
       ->condition('created', $startTime, '>=')
       ->condition('created', $endTime, '<=')
+      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
+      ->condition('uid', 0, '>')
       ->groupBy('uid')
       ->orderBy('login_count', 'DESC')
       ->range(0, $limit);
@@ -121,9 +131,8 @@ class LoginStatsService {
         /** @var \Drupal\user\UserInterface $user */
         $user = $users[$uid];
         $topUsersFormatted[] = [
-          'uid' => $uid,
+          'uid' => (int) $uid,
           'name' => $user->getDisplayName(),
-          'email' => $user->getEmail(),
           'count' => (int) $record->login_count,
         ];
       }
@@ -163,6 +172,7 @@ class LoginStatsService {
     // Ensure all event types are represented.
     $eventTypes = [
       LoginEventType::SuccessLogin->value => 0,
+      LoginEventType::SuccessLoginOnetime->value => 0,
       LoginEventType::FailedLoginInvalidUser->value => 0,
       LoginEventType::FailedLoginValidUser->value => 0,
       LoginEventType::FailedLoginBlockedUser->value => 0,
@@ -242,6 +252,16 @@ class LoginStatsService {
    */
   public function getMonthlyStats(int $monthStart, int $monthEnd): array {
     return $this->getStatsForPeriod($monthStart, $monthEnd);
+  }
+
+  /**
+   * Gets event values that represent successful login activity.
+   */
+  private function getSuccessfulLoginEventValues(): array {
+    return [
+      LoginEventType::SuccessLogin->value,
+      LoginEventType::SuccessLoginOnetime->value,
+    ];
   }
 
 }
