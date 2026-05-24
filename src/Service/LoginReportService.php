@@ -13,7 +13,6 @@ use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\Utility\Token;
 use Drupal\login_monitor\LoginEventType;
 
 /**
@@ -40,7 +39,6 @@ final class LoginReportService {
     private readonly ConfigFactoryInterface $configFactory,
     private readonly MailManagerInterface $mailManager,
     private readonly TimeInterface $time,
-    private readonly Token $token,
     private readonly LanguageManagerInterface $languageManager,
     private readonly LoggerChannelInterface $logger,
     private readonly LoginStatsService $loginStatsService,

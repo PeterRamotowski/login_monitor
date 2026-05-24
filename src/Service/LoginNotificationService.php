@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor\Service;
 
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Mail\MailFormatHelper;
@@ -15,7 +13,6 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Utility\Token;
 use Drupal\login_monitor\LoginEventType;
-use Drupal\login_monitor\Service\LoginEventDataInterface;
 
 /**
  * Service for handling login email notifications.
@@ -42,8 +39,6 @@ final class LoginNotificationService {
     private readonly MailManagerInterface $mailManager,
     private readonly LoggerChannelInterface $logger,
     private readonly Token $token,
-    private readonly DateFormatterInterface $dateFormatter,
-    private readonly TimeInterface $time,
     private readonly AccountProxyInterface $currentUser,
     private readonly ?FloodInterface $flood = NULL,
   ) {}

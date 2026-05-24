@@ -17,8 +17,6 @@ services:
       - '@plugin.manager.mail'
       - '@logger.channel.login_monitor'
       - '@token'
-      - '@date.formatter'
-      - '@datetime.time'
       - '@current_user'
       - '@flood'
 
@@ -42,7 +40,6 @@ services:
       - '@config.factory'
       - '@plugin.manager.mail'
       - '@datetime.time'
-      - '@token'
       - '@language_manager'
       - '@logger.channel.login_monitor'
       - '@login_monitor.stats_service'
