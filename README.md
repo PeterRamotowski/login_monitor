@@ -13,7 +13,7 @@ and user activity patterns.
 - Installation
 - Configuration
 - Features
-- Drush commands
+- CLI commands
 - Security
 - Troubleshooting
 - FAQ
@@ -43,8 +43,9 @@ For further information, see [Installing Drupal Modules](https://www.drupal.org/
    (`/admin/config/people/login-monitor`) to configure the module.
 1. Configure the following settings:
    - **Enable login logging**: Toggle logging of login events
-   - **Send email notifications**: Enable real-time email notifications for
-     login events
+   - **Send email notifications**: Enable email notifications for login events
+   - **Notification delivery**: Send notifications immediately or queue them
+     for delivery during cron
    - **Notification rate limit**: Limit notification emails per IP address and
      event type per hour
    - **Tracked user roles**: Select which user roles should be monitored
@@ -76,8 +77,9 @@ them only to trusted operational or security roles.
 - Stores IP addresses, user agents, and timestamps
 
 ### Email Notifications
-- Real-time email notifications for login events
+- Immediate or cron-queued email notifications for login events
 - Configurable email templates with token support
+- Per-IP and event-type notification rate limiting
 - Role-based filtering for notifications
 - Customizable recipient addresses
 
@@ -99,17 +101,23 @@ them only to trusted operational or security roles.
 - Bulk operations for log management
 
 
-## Drush commands
+## CLI commands
 
-The module provides the following Drush command:
+The module provides a command for manually processing statistical reports:
 
 ```bash
 drush login-monitor:send-reports
 ```
 
-This command manually triggers the sending of statistical reports. It's useful
-for testing report functionality or sending reports outside of the normal
-schedule.
+The command runs the same report schedule checks as cron. It is useful for
+testing report processing or manually processing a report that is due.
+
+On Drupal 11.4 or later, the command is also available through Drupal core's
+CLI:
+
+```bash
+vendor/bin/dr login-monitor:send-reports
+```
 
 
 ## Security
