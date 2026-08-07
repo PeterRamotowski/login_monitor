@@ -164,3 +164,24 @@ function login_monitor_update_8005() {
 
   return t('Added notification_delivery configuration setting.');
 }
+
+/**
+ * Migrate last-report timestamps from config to State API.
+ */
+function login_monitor_update_8006(): string {
+  $config = \Drupal::configFactory()->getEditable('login_monitor.settings');
+  $state = \Drupal::state();
+
+  foreach (['daily', 'weekly', 'monthly'] as $freq) {
+    $configKey = 'last_' . $freq . '_report';
+    $value = $config->get($configKey);
+    if ($value !== NULL && (int) $value > 0) {
+      $state->set('login_monitor.last_report.' . $freq, (int) $value);
+    }
+    $config->clear($configKey);
+  }
+
+  $config->save(TRUE);
+
+  return (string) t('Migrated last-report timestamps from config to State API.');
+}

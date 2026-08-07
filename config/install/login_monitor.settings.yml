@@ -10,6 +10,3 @@ log_retention_days: 365
 enable_email_reports: false
 report_frequency: 'weekly'
 report_recipient: ''
-last_daily_report: 0
-last_weekly_report: 0
-last_monthly_report: 0

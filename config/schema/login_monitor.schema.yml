@@ -42,12 +42,3 @@ login_monitor.settings:
     report_recipient:
       type: email
       label: 'Report recipient email'
-    last_daily_report:
-      type: integer
-      label: 'Last daily report timestamp'
-    last_weekly_report:
-      type: integer
-      label: 'Last weekly report timestamp'
-    last_monthly_report:
-      type: integer
-      label: 'Last monthly report timestamp'

@@ -24,6 +24,17 @@ services:
       - '@login_monitor.notification_service'
       - '@queue'
 
+  login_monitor.report_scheduler:
+    class: Drupal\login_monitor\Service\LoginReportScheduler
+    arguments:
+      - '@datetime.time'
+      - '@state'
+
+  login_monitor.report_body_builder:
+    class: Drupal\login_monitor\Service\LoginReportBodyBuilder
+    arguments:
+      - '@date.formatter'
+
   login_monitor.login_monitor_service:
     class: Drupal\login_monitor\Service\LoginMonitorService
     arguments:
@@ -61,12 +72,12 @@ services:
     arguments:
       - '@config.factory'
       - '@plugin.manager.mail'
-      - '@datetime.time'
       - '@language_manager'
       - '@logger.channel.login_monitor'
       - '@login_monitor.stats_service'
+      - '@login_monitor.report_scheduler'
+      - '@login_monitor.report_body_builder'
       - '@lock'
-      - '@date.formatter'
 
   login_monitor.login_event_data:
     class: Drupal\login_monitor\Service\LoginEventData
