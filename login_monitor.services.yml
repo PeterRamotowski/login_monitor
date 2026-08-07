@@ -6,16 +6,25 @@ services:
       - '@database'
       - '@datetime.time'
 
+  Drupal\login_monitor\Repository\LoginLogRepository:
+    alias: login_monitor.login_log_repository
+
   login_monitor.failed_login_user_resolver:
     class: Drupal\login_monitor\Service\FailedLoginUserResolver
     arguments:
       - '@entity_type.manager'
+
+  Drupal\login_monitor\Service\FailedLoginUserResolver:
+    alias: login_monitor.failed_login_user_resolver
 
   login_monitor.notification_rate_limiter:
     class: Drupal\login_monitor\Service\LoginNotificationRateLimiter
     arguments:
       - '@flood'
       - '@logger.channel.login_monitor'
+
+  Drupal\login_monitor\Service\LoginNotificationRateLimiter:
+    alias: login_monitor.notification_rate_limiter
 
   login_monitor.notification_dispatcher:
     class: Drupal\login_monitor\Service\LoginNotificationDispatcher
@@ -24,16 +33,25 @@ services:
       - '@login_monitor.notification_service'
       - '@queue'
 
+  Drupal\login_monitor\Service\LoginNotificationDispatcher:
+    alias: login_monitor.notification_dispatcher
+
   login_monitor.report_scheduler:
     class: Drupal\login_monitor\Service\LoginReportScheduler
     arguments:
       - '@datetime.time'
       - '@state'
 
+  Drupal\login_monitor\Service\LoginReportScheduler:
+    alias: login_monitor.report_scheduler
+
   login_monitor.report_body_builder:
     class: Drupal\login_monitor\Service\LoginReportBodyBuilder
     arguments:
       - '@date.formatter'
+
+  Drupal\login_monitor\Service\LoginReportBodyBuilder:
+    alias: login_monitor.report_body_builder
 
   login_monitor.login_monitor_service:
     class: Drupal\login_monitor\Service\LoginMonitorService
@@ -45,6 +63,9 @@ services:
       - '@login_monitor.failed_login_user_resolver'
       - '@logger.channel.login_monitor'
 
+  Drupal\login_monitor\Service\LoginMonitorService:
+    alias: login_monitor.login_monitor_service
+
   login_monitor.notification_service:
     class: Drupal\login_monitor\Service\LoginNotificationService
     arguments:
@@ -55,6 +76,9 @@ services:
       - '@current_user'
       - '@login_monitor.notification_rate_limiter'
 
+  Drupal\login_monitor\Service\LoginNotificationService:
+    alias: login_monitor.notification_service
+
   login_monitor.login_log_service:
     class: Drupal\login_monitor\Service\LoginLogService
     arguments:
@@ -62,10 +86,16 @@ services:
       - '@datetime.time'
       - '@config.factory'
 
+  Drupal\login_monitor\Service\LoginLogService:
+    alias: login_monitor.login_log_service
+
   login_monitor.stats_service:
     class: Drupal\login_monitor\Service\LoginStatsService
     arguments:
       - '@login_monitor.login_log_repository'
+
+  Drupal\login_monitor\Service\LoginStatsService:
+    alias: login_monitor.stats_service
 
   login_monitor.report_service:
     class: Drupal\login_monitor\Service\LoginReportService
@@ -79,11 +109,17 @@ services:
       - '@login_monitor.report_body_builder'
       - '@lock'
 
+  Drupal\login_monitor\Service\LoginReportService:
+    alias: login_monitor.report_service
+
   login_monitor.login_event_data:
     class: Drupal\login_monitor\Service\LoginEventData
     arguments:
       - '@request_stack'
       - '@login_monitor.login_log_repository'
+
+  Drupal\login_monitor\Service\LoginEventData:
+    alias: login_monitor.login_event_data
 
   logger.channel.login_monitor:
     class: Drupal\Core\Logger\LoggerChannel
