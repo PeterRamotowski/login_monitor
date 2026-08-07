@@ -17,21 +17,27 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 final class LoginMonitorSettingsForm extends ConfigFormBase {
 
   /**
+   * The entity type manager.
+   */
+  protected EntityTypeManagerInterface $entityTypeManager;
+
+  /**
    * Constructs a LoginMonitorSettingsForm object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
    * @param \Drupal\Core\Config\TypedConfigManagerInterface $typed_config_manager
    *   The typed configuration manager.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
     TypedConfigManagerInterface $typed_config_manager,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
+    EntityTypeManagerInterface $entity_type_manager,
   ) {
     parent::__construct($config_factory, $typed_config_manager);
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**

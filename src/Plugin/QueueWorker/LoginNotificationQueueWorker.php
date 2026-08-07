@@ -28,6 +28,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 final class LoginNotificationQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginInterface {
 
   /**
+   * The login notification service.
+   */
+  protected LoginNotificationService $notificationService;
+
+  /**
    * Constructs a LoginNotificationQueueWorker.
    *
    * @param array $configuration
@@ -36,16 +41,17 @@ final class LoginNotificationQueueWorker extends QueueWorkerBase implements Cont
    *   The plugin ID.
    * @param mixed $plugin_definition
    *   The plugin definition.
-   * @param \Drupal\login_monitor\Service\LoginNotificationService $notificationService
+   * @param \Drupal\login_monitor\Service\LoginNotificationService $notification_service
    *   The login notification service.
    */
   public function __construct(
     array $configuration,
     string $plugin_id,
     mixed $plugin_definition,
-    private readonly LoginNotificationService $notificationService,
+    LoginNotificationService $notification_service,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->notificationService = $notification_service;
   }
 
   /**
