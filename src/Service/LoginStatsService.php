@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor\Service;
 
-use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\login_monitor\LoginEventType;
+use Drupal\login_monitor\Repository\LoginLogRepository;
 
 /**
  * Service for querying login statistics from the database.
+ *
+ * Acts as an aggregation façade over LoginLogRepository, composing
+ * lower-level counts into structured statistics arrays for reporting.
  */
 final class LoginStatsService {
 
   /**
    * Constructs a login stats service.
+   *
+   * @param \Drupal\login_monitor\Repository\LoginLogRepository $repository
+   *   The login log repository.
    */
   public function __construct(
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly TimeInterface $time,
-    private readonly Connection $database,
+    private readonly LoginLogRepository $repository,
   ) {}
 
   /**
@@ -38,10 +39,10 @@ final class LoginStatsService {
     return [
       'period_start' => $startTime,
       'period_end' => $endTime,
-      'total_logins' => $this->getTotalLogins($startTime, $endTime),
-      'unique_users' => $this->getUniqueUsers($startTime, $endTime),
-      'top_users' => $this->getTopUsers($startTime, $endTime),
-      'event_statistics' => $this->getEventStatistics($startTime, $endTime),
+      'total_logins' => $this->repository->countSuccessfulLogins($startTime, $endTime),
+      'unique_users' => $this->repository->countUniqueUsers($startTime, $endTime),
+      'top_users' => $this->repository->getTopUsers($startTime, $endTime),
+      'event_statistics' => $this->repository->getEventCounts($startTime, $endTime),
     ];
   }
 
@@ -57,15 +58,7 @@ final class LoginStatsService {
    *   Total number of logins in the period.
    */
   public function getTotalLogins(int $startTime, int $endTime): int {
-    $storage = $this->entityTypeManager->getStorage('login_log');
-
-    $query = $storage->getQuery()
-      ->condition('created', $startTime, '>=')
-      ->condition('created', $endTime, '<=')
-      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
-      ->accessCheck(FALSE);
-
-    return (int) $query->count()->execute();
+    return $this->repository->countSuccessfulLogins($startTime, $endTime);
   }
 
   /**
@@ -80,15 +73,7 @@ final class LoginStatsService {
    *   The number of unique users who logged in during the period.
    */
   public function getUniqueUsers(int $startTime, int $endTime): int {
-    $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['uid'])
-      ->condition('created', $startTime, '>=')
-      ->condition('created', $endTime, '<=')
-      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
-      ->condition('uid', 0, '>')
-      ->distinct();
-
-    return (int) $query->countQuery()->execute()->fetchField();
+    return $this->repository->countUniqueUsers($startTime, $endTime);
   }
 
   /**
@@ -105,81 +90,22 @@ final class LoginStatsService {
    *   Array of top users with their login counts.
    */
   public function getTopUsers(int $startTime, int $endTime, int $limit = 5): array {
-    // Get user IDs with their login counts.
-    $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['uid'])
-      ->condition('created', $startTime, '>=')
-      ->condition('created', $endTime, '<=')
-      ->condition('event_type', $this->getSuccessfulLoginEventValues(), 'IN')
-      ->condition('uid', 0, '>')
-      ->groupBy('uid')
-      ->orderBy('login_count', 'DESC')
-      ->range(0, $limit);
-    $query->addExpression('COUNT(*)', 'login_count');
-    $topUsers = $query->execute()->fetchAllAssoc('uid');
-
-    if (empty($topUsers)) {
-      return [];
-    }
-
-    $userStorage = $this->entityTypeManager->getStorage('user');
-    $users = $userStorage->loadMultiple(array_keys($topUsers));
-
-    $topUsersFormatted = [];
-    foreach ($topUsers as $uid => $record) {
-      if (isset($users[$uid])) {
-        /** @var \Drupal\user\UserInterface $user */
-        $user = $users[$uid];
-        $topUsersFormatted[] = [
-          'uid' => (int) $uid,
-          'name' => $user->getDisplayName(),
-          'count' => (int) $record->login_count,
-        ];
-      }
-    }
-
-    return $topUsersFormatted;
+    return $this->repository->getTopUsers($startTime, $endTime, $limit);
   }
 
   /**
    * Get login event statistics.
    *
-   * @param int $startTime
+   * @param int|null $startTime
    *   Start timestamp for the query range.
-   * @param int $endTime
+   * @param int|null $endTime
    *   End timestamp for the query range.
    *
    * @return array
    *   Array with statistics for each event type.
    */
   public function getEventStatistics(?int $startTime = NULL, ?int $endTime = NULL): array {
-    $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['event_type'])
-      ->groupBy('event_type');
-
-    $query->addExpression('COUNT(*)', 'count');
-
-    if ($startTime) {
-      $query->condition('created', $startTime, '>=');
-    }
-
-    if ($endTime) {
-      $query->condition('created', $endTime, '<=');
-    }
-
-    $results = $query->execute()->fetchAllKeyed();
-
-    // Ensure all event types are represented.
-    $eventTypes = [
-      LoginEventType::SuccessLogin->value => 0,
-      LoginEventType::SuccessLoginOnetime->value => 0,
-      LoginEventType::FailedLoginInvalidUser->value => 0,
-      LoginEventType::FailedLoginValidUser->value => 0,
-      LoginEventType::FailedLoginBlockedUser->value => 0,
-      LoginEventType::Logout->value => 0,
-    ];
-
-    return array_merge($eventTypes, $results);
+    return $this->repository->getEventCounts($startTime, $endTime);
   }
 
   /**
@@ -194,20 +120,7 @@ final class LoginStatsService {
    *   Array of recent failed login attempts.
    */
   public function getRecentFailedAttempts(int $limit = 50, int $hours = 24): array {
-    $cutoffTime = $this->time->getRequestTime() - ($hours * 3600);
-
-    $query = $this->database->select('login_log', 'll')
-      ->fields('ll', ['ip_address', 'created', 'event_type'])
-      ->condition('event_type', [
-        LoginEventType::FailedLoginInvalidUser->value,
-        LoginEventType::FailedLoginValidUser->value,
-        LoginEventType::FailedLoginBlockedUser->value,
-      ], 'IN')
-      ->condition('created', $cutoffTime, '>=')
-      ->orderBy('created', 'DESC')
-      ->range(0, $limit);
-
-    return $query->execute()->fetchAll();
+    return $this->repository->getRecentFailedAttempts($limit, $hours);
   }
 
   /**
@@ -217,7 +130,7 @@ final class LoginStatsService {
    *   Start timestamp for the day.
    *
    * @return array
-   *   Array with daily statistics
+   *   Array with daily statistics.
    */
   public function getDailyStats(int $dayStart): array {
     $dayEnd = $dayStart + 86400 - 1;
@@ -233,7 +146,7 @@ final class LoginStatsService {
    *   End timestamp for the week.
    *
    * @return array
-   *   Array with weekly statistics
+   *   Array with weekly statistics.
    */
   public function getWeeklyStats(int $weekStart, int $weekEnd): array {
     return $this->getStatsForPeriod($weekStart, $weekEnd);
@@ -248,20 +161,10 @@ final class LoginStatsService {
    *   End timestamp for the month.
    *
    * @return array
-   *   Array with monthly statistics
+   *   Array with monthly statistics.
    */
   public function getMonthlyStats(int $monthStart, int $monthEnd): array {
     return $this->getStatsForPeriod($monthStart, $monthEnd);
-  }
-
-  /**
-   * Gets event values that represent successful login activity.
-   */
-  private function getSuccessfulLoginEventValues(): array {
-    return [
-      LoginEventType::SuccessLogin->value,
-      LoginEventType::SuccessLoginOnetime->value,
-    ];
   }
 
 }

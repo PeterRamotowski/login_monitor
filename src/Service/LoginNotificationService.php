@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\login_monitor\Service;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -22,16 +21,6 @@ final class LoginNotificationService {
   use StringTranslationTrait;
 
   /**
-   * The notification flood control event name.
-   */
-  private const FLOOD_EVENT_NAME = 'login_monitor.notification';
-
-  /**
-   * The notification flood control time window.
-   */
-  private const FLOOD_WINDOW = 3600;
-
-  /**
    * Constructs a login notification service.
    */
   public function __construct(
@@ -40,7 +29,7 @@ final class LoginNotificationService {
     private readonly LoggerChannelInterface $logger,
     private readonly Token $token,
     private readonly AccountProxyInterface $currentUser,
-    private readonly ?FloodInterface $flood = NULL,
+    private readonly LoginNotificationRateLimiter $rateLimiter,
   ) {}
 
   /**
@@ -58,13 +47,8 @@ final class LoginNotificationService {
       return;
     }
 
-    $identifier = hash('sha256', $loginEventData->getIpAddress() . ':' . $eventType->value);
     $rateLimit = (int) ($settings->get('notification_rate_limit') ?? 10);
-    if ($rateLimit > 0 && $this->flood && !$this->flood->isAllowed(self::FLOOD_EVENT_NAME, $rateLimit, self::FLOOD_WINDOW, $identifier)) {
-      $this->logger->warning('Suppressed login monitor notification flood for @event from @ip.', [
-        '@event' => $eventType->value,
-        '@ip' => $loginEventData->getIpAddress(),
-      ]);
+    if (!$this->rateLimiter->isAllowed($eventType, $loginEventData->getIpAddress(), $rateLimit)) {
       return;
     }
 
@@ -93,9 +77,6 @@ final class LoginNotificationService {
     }
 
     $langcode = $this->currentUser->getPreferredLangcode();
-    if ($rateLimit > 0 && $this->flood) {
-      $this->flood->register(self::FLOOD_EVENT_NAME, self::FLOOD_WINDOW, $identifier);
-    }
 
     $message = $this->mailManager->mail('login_monitor', 'login_notify', $recipientEmail, $langcode, $emailParams, NULL, TRUE);
 

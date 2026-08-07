@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor\Hook;
 
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\login_monitor\LoginMonitorLimits;
@@ -41,7 +40,7 @@ final class LoginMonitorFormHooks {
    * Stores the attempted username for potential failed login logging.
    */
   public function validateLoginAttempt(array &$form, FormStateInterface $formState): void {
-    $username = $this->normalizeUsername((string) $formState->getValue('name'));
+    $username = LoginMonitorLimits::normalizeUsername((string) $formState->getValue('name'));
     if ($username !== '') {
       $formState->set('login_monitor_username', $username);
     }
@@ -58,13 +57,6 @@ final class LoginMonitorFormHooks {
     if ($formState->hasAnyErrors() && !empty($username)) {
       $this->loginMonitorService->processFailure($username);
     }
-  }
-
-  /**
-   * Normalizes a typed username from the login form.
-   */
-  private function normalizeUsername(string $username): string {
-    return Unicode::truncate(trim($username), LoginMonitorLimits::USERNAME_MAX_LENGTH, TRUE, FALSE);
   }
 
 }

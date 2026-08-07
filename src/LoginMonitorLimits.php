@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor;
 
+use Drupal\Component\Utility\Unicode;
+
 /**
  * Defines shared Login Monitor limits.
  */
@@ -28,5 +30,23 @@ final class LoginMonitorLimits {
    * Prevents constructing this utility class.
    */
   private function __construct() {}
+
+  /**
+   * Trims and truncates a raw username to the stored maximum length.
+   *
+   * @param string $username
+   *   The raw username string.
+   *
+   * @return string
+   *   The normalised username, or an empty string when blank after trimming.
+   */
+  public static function normalizeUsername(string $username): string {
+    return Unicode::truncate(
+      trim($username),
+      self::USERNAME_MAX_LENGTH,
+      TRUE,
+      FALSE,
+    );
+  }
 
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor;
 
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
@@ -101,7 +102,7 @@ final class LoginLogListBuilder extends EntityListBuilder {
     $row['user_roles'] = $this->getUserRoles($entity);
     $row['ip_address'] = $entity->getIpAddress() ?: '';
     $user_agent = $entity->getUserAgent();
-    $row['user_agent'] = $user_agent ? (strlen($user_agent) > 50 ? substr($user_agent, 0, 50) . '...' : $user_agent) : '';
+    $row['user_agent'] = $user_agent ? Unicode::truncate($user_agent, 50, TRUE, TRUE) : '';
     return $row + parent::buildRow($entity);
   }
 

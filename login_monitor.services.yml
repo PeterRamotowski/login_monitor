@@ -1,14 +1,38 @@
 services:
+  login_monitor.login_log_repository:
+    class: Drupal\login_monitor\Repository\LoginLogRepository
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@datetime.time'
+
+  login_monitor.failed_login_user_resolver:
+    class: Drupal\login_monitor\Service\FailedLoginUserResolver
+    arguments:
+      - '@entity_type.manager'
+
+  login_monitor.notification_rate_limiter:
+    class: Drupal\login_monitor\Service\LoginNotificationRateLimiter
+    arguments:
+      - '@flood'
+      - '@logger.channel.login_monitor'
+
+  login_monitor.notification_dispatcher:
+    class: Drupal\login_monitor\Service\LoginNotificationDispatcher
+    arguments:
+      - '@config.factory'
+      - '@login_monitor.notification_service'
+      - '@queue'
+
   login_monitor.login_monitor_service:
     class: Drupal\login_monitor\Service\LoginMonitorService
     arguments:
-      - '@entity_type.manager'
       - '@config.factory'
       - '@login_monitor.login_event_data'
       - '@login_monitor.login_log_service'
-      - '@login_monitor.notification_service'
+      - '@login_monitor.notification_dispatcher'
+      - '@login_monitor.failed_login_user_resolver'
       - '@logger.channel.login_monitor'
-      - '@queue'
 
   login_monitor.notification_service:
     class: Drupal\login_monitor\Service\LoginNotificationService
@@ -18,7 +42,7 @@ services:
       - '@logger.channel.login_monitor'
       - '@token'
       - '@current_user'
-      - '@flood'
+      - '@login_monitor.notification_rate_limiter'
 
   login_monitor.login_log_service:
     class: Drupal\login_monitor\Service\LoginLogService
@@ -30,9 +54,7 @@ services:
   login_monitor.stats_service:
     class: Drupal\login_monitor\Service\LoginStatsService
     arguments:
-      - '@entity_type.manager'
-      - '@datetime.time'
-      - '@database'
+      - '@login_monitor.login_log_repository'
 
   login_monitor.report_service:
     class: Drupal\login_monitor\Service\LoginReportService
@@ -50,8 +72,7 @@ services:
     class: Drupal\login_monitor\Service\LoginEventData
     arguments:
       - '@request_stack'
-      - '@datetime.time'
-      - '@database'
+      - '@login_monitor.login_log_repository'
 
   logger.channel.login_monitor:
     class: Drupal\Core\Logger\LoggerChannel

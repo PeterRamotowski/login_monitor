@@ -90,4 +90,35 @@ final class LoginLogService {
     return $deletedCount;
   }
 
+  /**
+   * Deletes all login log entries belonging to a specific user.
+   *
+   * @param int $uid
+   *   The user ID whose logs should be deleted.
+   *
+   * @return int
+   *   The number of deleted log entries.
+   */
+  public function deleteByUserId(int $uid): int {
+    $storage = $this->entityTypeManager->getStorage('login_log');
+    $deletedCount = 0;
+
+    do {
+      $ids = $storage->getQuery()
+        ->condition('uid', $uid)
+        ->accessCheck(FALSE)
+        ->range(0, LoginMonitorLimits::DELETE_BATCH_SIZE)
+        ->execute();
+
+      if (empty($ids)) {
+        break;
+      }
+
+      $storage->delete($storage->loadMultiple($ids));
+      $deletedCount += count($ids);
+    } while (count($ids) === LoginMonitorLimits::DELETE_BATCH_SIZE);
+
+    return $deletedCount;
+  }
+
 }

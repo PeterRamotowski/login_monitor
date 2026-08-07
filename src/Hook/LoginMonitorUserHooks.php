@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor\Hook;
 
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\login_monitor\LoginEventType;
-use Drupal\login_monitor\LoginMonitorLimits;
+use Drupal\login_monitor\Service\LoginLogService;
 use Drupal\login_monitor\Service\LoginMonitorService;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -25,7 +24,6 @@ final class LoginMonitorUserHooks {
    * Constructs the login monitor user hook service.
    */
   public function __construct(
-    private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly RequestStack $requestStack,
     #[Autowire(service: 'current_route_match')]
     private readonly RouteMatchInterface $routeMatch,
@@ -33,6 +31,8 @@ final class LoginMonitorUserHooks {
     private readonly LoginMonitorService $loginMonitorService,
     #[Autowire(service: 'logger.channel.login_monitor')]
     private readonly LoggerChannelInterface $logger,
+    #[Autowire(service: 'login_monitor.login_log_service')]
+    private readonly LoginLogService $loginLogService,
   ) {}
 
   /**
@@ -62,24 +62,7 @@ final class LoginMonitorUserHooks {
    */
   #[Hook('user_delete')]
   public function userDelete(UserInterface $account): void {
-    $storage = $this->entityTypeManager->getStorage('login_log');
-    $deletedCount = 0;
-
-    do {
-      $loginLogIds = $storage->getQuery()
-        ->condition('uid', $account->id())
-        ->accessCheck(FALSE)
-        ->range(0, LoginMonitorLimits::DELETE_BATCH_SIZE)
-        ->execute();
-
-      if (empty($loginLogIds)) {
-        break;
-      }
-
-      $loginLogs = $storage->loadMultiple($loginLogIds);
-      $storage->delete($loginLogs);
-      $deletedCount += count($loginLogIds);
-    } while (count($loginLogIds) === LoginMonitorLimits::DELETE_BATCH_SIZE);
+    $deletedCount = $this->loginLogService->deleteByUserId((int) $account->id());
 
     if ($deletedCount > 0) {
       $this->logger->info(

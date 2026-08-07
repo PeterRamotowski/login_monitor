@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\login_monitor\Service;
 
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Database\Connection;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\login_monitor\LoginMonitorLimits;
+use Drupal\login_monitor\Repository\LoginLogRepository;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -38,8 +37,7 @@ final class LoginEventData implements LoginEventDataInterface {
    */
   public function __construct(
     private readonly RequestStack $requestStack,
-    private readonly TimeInterface $time,
-    private readonly Connection $database,
+    private readonly LoginLogRepository $repository,
   ) {}
 
   /**
@@ -66,10 +64,8 @@ final class LoginEventData implements LoginEventDataInterface {
       return;
     }
 
-    $typedUsername = trim($typedUsername);
-    $this->typedUsername = $typedUsername === ''
-      ? NULL
-      : Unicode::truncate($typedUsername, LoginMonitorLimits::USERNAME_MAX_LENGTH, TRUE, FALSE);
+    $normalised = LoginMonitorLimits::normalizeUsername($typedUsername);
+    $this->typedUsername = $normalised !== '' ? $normalised : NULL;
   }
 
   /**
@@ -136,18 +132,12 @@ final class LoginEventData implements LoginEventDataInterface {
    * Get the number of active sessions for a user.
    */
   public function getActiveSessions(): int {
-    if (!isset($this->user)) {
+    if ($this->user === NULL) {
       return 0;
     }
 
-    $current_time = $this->time->getRequestTime();
-    $max_lifetime = (int) ini_get('session.gc_maxlifetime');
-
-    $query = $this->database->select('sessions', 's')
-      ->condition('s.uid', $this->user->id())
-      ->condition('s.timestamp', $current_time - $max_lifetime, '>=');
-
-    return (int) $query->countQuery()->execute()->fetchField();
+    $maxLifetime = (int) ini_get('session.gc_maxlifetime');
+    return $this->repository->countActiveSessions((int) $this->user->id(), $maxLifetime);
   }
 
 }
