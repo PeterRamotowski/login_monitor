@@ -64,8 +64,8 @@ final class LoginEventData implements LoginEventDataInterface {
       return;
     }
 
-    $normalised = LoginMonitorLimits::normalizeUsername($typedUsername);
-    $this->typedUsername = $normalised !== '' ? $normalised : NULL;
+    $normalized = LoginMonitorLimits::normalizeUsername($typedUsername);
+    $this->typedUsername = $normalized !== '' ? $normalized : NULL;
   }
 
   /**

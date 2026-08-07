@@ -34,7 +34,7 @@ final class FailedLoginUserResolver {
    * best describes the failure.
    *
    * @param string $typedUsername
-   *   The username as typed by the visitor (already normalised).
+   *   The username as typed by the visitor (already normalized).
    * @param \Drupal\login_monitor\Service\LoginEventData $loginEventData
    *   The mutable event-data context to populate when a user is found.
    *

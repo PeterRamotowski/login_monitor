@@ -12,7 +12,7 @@ use Drupal\login_monitor\LoginEventType;
  * Enforces per-IP-per-event rate limiting for login notification emails.
  *
  * Encapsulates flood control so that LoginNotificationService can be
- * unit-tested for email-building behaviour without simulating the flood
+ * unit-tested for email-building behavior without simulating the flood
  * backend.
  */
 final class LoginNotificationRateLimiter {

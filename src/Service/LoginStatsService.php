@@ -9,7 +9,7 @@ use Drupal\login_monitor\Repository\LoginLogRepository;
 /**
  * Service for querying login statistics from the database.
  *
- * Acts as an aggregation façade over LoginLogRepository, composing
+ * Acts as an aggregation facade over LoginLogRepository, composing
  * lower-level counts into structured statistics arrays for reporting.
  */
 final class LoginStatsService {

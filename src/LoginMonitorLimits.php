@@ -38,7 +38,7 @@ final class LoginMonitorLimits {
    *   The raw username string.
    *
    * @return string
-   *   The normalised username, or an empty string when blank after trimming.
+   *   The normalized username, or an empty string when blank after trimming.
    */
   public static function normalizeUsername(string $username): string {
     return Unicode::truncate(
